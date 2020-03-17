@@ -26,3 +26,4 @@ hs_err_pid*
 /NBodySim/NBodySim.xcodeproj/project.xcworkspace/xcuserdata/rasmus.xcuserdatad/UserInterfaceState.xcuserstate
 *.DS_Store
 /NBodySim/NBodySim.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+*.xcbkptlist
