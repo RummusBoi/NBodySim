@@ -65,8 +65,8 @@ private:
     float** prevys;
     float** prevzs;
     
-    int particle_count = 100;
-    int time_steps = 5000;
+    int particle_count = 2;
+    int time_steps = 500;
 public:
     GPUSimulator();
     void runGen();

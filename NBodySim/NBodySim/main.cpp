@@ -17,7 +17,7 @@ int main(int argc, const char * argv[]) {
     GPUSimulator sim = GPUSimulator();
     cout << "setup done, setting state" << endl;
     sim.setInitialState();
-    int timesteps = 5000;
+    int timesteps = 500;
     
     auto t1 = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < timesteps; i++) {
@@ -35,6 +35,6 @@ int main(int argc, const char * argv[]) {
     DataPlotter dataplotter = DataPlotter(1400, 1400);
     
     cout << "shit" << endl;
-    dataplotter.draw3DData(xarrs, yarrs, zarrs, 100, timesteps);
+    dataplotter.draw3DData(xarrs, yarrs, zarrs, 2, timesteps);
     return 0;
 }

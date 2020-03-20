@@ -33,8 +33,8 @@ void DataPlotter::feedNew3DFrame(float *xarr, float *yarr, float *zarr, int size
         SDL_Rect rect;
         rect.x = xproj;
         rect.y = yproj;
-        rect.w = 2;
-        rect.h = 2;
+        rect.w = 5;
+        rect.h = 5;
         
         SDL_RenderDrawRect(renderer, &rect);
     }
@@ -65,7 +65,7 @@ void DataPlotter::draw3DData (float **xarrs, float **yarrs, float **zarrs, int p
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
     SDL_RenderClear(renderer);
     feedNew3DFrame(xarrs[0], yarrs[0], zarrs[0], particles);
-    int stepsPerFrame = 5;
+    int stepsPerFrame = 50;
     while (running) {
 
         if(step % stepsPerFrame == 0) {

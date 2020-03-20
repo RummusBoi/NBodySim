@@ -88,18 +88,18 @@ GPUSimulator::GPUSimulator () {
     /*Step 4: Creating command queue associate with the context.*/
     command_queue = clCreateCommandQueue(context, devices[0], 0, &clStatus);
     printErrorCode(&clStatus);
-
+    
     // Create memory buffers on the device for each vector
-    xpos = clCreateBuffer(context, CL_MEM_READ_ONLY,particle_count * sizeof(float), NULL, &clStatus);
-    ypos = clCreateBuffer(context, CL_MEM_READ_ONLY,particle_count * sizeof(float), NULL, &clStatus);
-    zpos = clCreateBuffer(context, CL_MEM_READ_ONLY,particle_count * sizeof(float), NULL, &clStatus);
+    xpos = clCreateBuffer(context, CL_MEM_READ_WRITE,particle_count * sizeof(float), NULL, &clStatus);
+    ypos = clCreateBuffer(context, CL_MEM_READ_WRITE,particle_count * sizeof(float), NULL, &clStatus);
+    zpos = clCreateBuffer(context, CL_MEM_READ_WRITE,particle_count * sizeof(float), NULL, &clStatus);
     
-    xvel = clCreateBuffer(context, CL_MEM_READ_ONLY,particle_count * sizeof(float), NULL, &clStatus);
-    yvel = clCreateBuffer(context, CL_MEM_READ_ONLY,particle_count * sizeof(float), NULL, &clStatus);
-    zvel = clCreateBuffer(context, CL_MEM_READ_ONLY,particle_count * sizeof(float), NULL, &clStatus);
+    xvel = clCreateBuffer(context, CL_MEM_READ_WRITE,particle_count * sizeof(float), NULL, &clStatus);
+    yvel = clCreateBuffer(context, CL_MEM_READ_WRITE,particle_count * sizeof(float), NULL, &clStatus);
+    zvel = clCreateBuffer(context, CL_MEM_READ_WRITE,particle_count * sizeof(float), NULL, &clStatus);
     
-    mass = clCreateBuffer(context, CL_MEM_READ_ONLY,particle_count * sizeof(float), NULL, &clStatus);
-    n_particles = clCreateBuffer(context, CL_MEM_READ_ONLY,sizeof(int), NULL, &clStatus);
+    mass = clCreateBuffer(context, CL_MEM_READ_WRITE,particle_count * sizeof(float), NULL, &clStatus);
+    n_particles = clCreateBuffer(context, CL_MEM_READ_WRITE,sizeof(int), NULL, &clStatus);
     
     xvelres = clCreateBuffer(context, CL_MEM_READ_WRITE,particle_count * sizeof(float), NULL, &clStatus);
     yvelres = clCreateBuffer(context, CL_MEM_READ_WRITE,particle_count * sizeof(float), NULL, &clStatus);
@@ -164,7 +164,7 @@ GPUSimulator::GPUSimulator () {
     clStatus = clBuildProgram(program, 1, devices, NULL, NULL, NULL);
     printErrorCode(&clStatus);
     cout << "built program..." << endl;
-    kernel = clCreateKernel(program, "hermiteIntegrator", &clStatus);
+    //kernel = clCreateKernel(program, "hermiteIntegrator", &clStatus);
     printErrorCode(&clStatus);
     
     accPredictor = clCreateKernel(program, "forcePredict", &clStatus);
@@ -201,7 +201,7 @@ GPUSimulator::GPUSimulator () {
     clStatus = clSetKernelArg(accPredictor, ++a, sizeof(cl_mem), (void *)&y0jerk);
     clStatus = clSetKernelArg(accPredictor, ++a, sizeof(cl_mem), (void *)&z0jerk);
     
-    
+    /*
     // ---- Hermite integrator kernel ---- //
     cout << "setting args " << endl;
     a = 0;
@@ -239,7 +239,7 @@ GPUSimulator::GPUSimulator () {
     clStatus = clSetKernelArg(kernel, ++a, sizeof(cl_mem), (void *)&xvelres);
     clStatus = clSetKernelArg(kernel, ++a, sizeof(cl_mem), (void *)&yvelres);
     clStatus = clSetKernelArg(kernel, ++a, sizeof(cl_mem), (void *)&zvelres);
-    
+    */
 }
 
 void GPUSimulator::setState (float* xp,
@@ -260,6 +260,26 @@ void GPUSimulator::setState (float* xp,
         
         massarr[i] = m[i];
     }
+    
+    cl_int clStatus;
+    clStatus = clEnqueueWriteBuffer(command_queue, xpos, CL_TRUE, 0, particle_count * sizeof(float), xposarr, 0, NULL, NULL);
+    printErrorCode(&clStatus);
+    clStatus = clEnqueueWriteBuffer(command_queue, ypos, CL_TRUE, 0, particle_count * sizeof(float), yposarr, 0, NULL, NULL);
+    printErrorCode(&clStatus);
+    clStatus = clEnqueueWriteBuffer(command_queue, zpos, CL_TRUE, 0, particle_count * sizeof(float), zposarr, 0, NULL, NULL);
+    printErrorCode(&clStatus);
+    clStatus = clEnqueueWriteBuffer(command_queue, xvel, CL_TRUE, 0, particle_count * sizeof(float), xvelarr, 0, NULL, NULL);
+    printErrorCode(&clStatus);
+    clStatus = clEnqueueWriteBuffer(command_queue, yvel, CL_TRUE, 0, particle_count * sizeof(float), yvelarr, 0, NULL, NULL);
+    printErrorCode(&clStatus);
+    clStatus = clEnqueueWriteBuffer(command_queue, zvel, CL_TRUE, 0, particle_count * sizeof(float), zvelarr, 0, NULL, NULL);
+    printErrorCode(&clStatus);
+    clStatus = clEnqueueWriteBuffer(command_queue, mass, CL_TRUE, 0, particle_count * sizeof(float), massarr, 0, NULL, NULL);
+    printErrorCode(&clStatus);
+    clStatus = clEnqueueWriteBuffer(command_queue, n_particles, CL_TRUE, 0, sizeof(int), &particle_count, 0, NULL, NULL);
+    printErrorCode(&clStatus);
+    clStatus = clEnqueueWriteBuffer(command_queue, xposres, CL_TRUE, 0, particle_count * sizeof(float), yposarr, 0, NULL, NULL);
+    clFinish(command_queue);
 }
 
 void GPUSimulator::setInitialState() {
@@ -287,95 +307,74 @@ void GPUSimulator::setInitialState() {
     yp[0] = 300;
     zp[0] = 0;
     
-    m[0] *= 1;
+    m[0] *= 3;
     
     xp[1] = 400;
     yp[1] = 300;
     zp[1] = 0;
     
-    yv[0] = 1;
-    yv[1] = -1;
+    yv[0] = 5;
+    yv[1] = -50;
     
-    xv[0] = -5;
-    xv[1] = -15;
+    xv[0] = 0;
+    xv[1] = 0;
     
     this->setState(xp, yp, zp, xv, yv, zv, m);
 }
 
 void GPUSimulator::runGen() {
-    /*
-    // -- OLD CODE --
-    cl_int clStatus;
-    clStatus = clEnqueueWriteBuffer(command_queue, xpos, CL_TRUE, 0, particle_count * sizeof(float), xposarr, 0, NULL, NULL);
-    printErrorCode(&clStatus);
-    clStatus = clEnqueueWriteBuffer(command_queue, ypos, CL_TRUE, 0, particle_count * sizeof(float), yposarr, 0, NULL, NULL);
-    printErrorCode(&clStatus);
-    clStatus = clEnqueueWriteBuffer(command_queue, zpos, CL_TRUE, 0, particle_count * sizeof(float), zposarr, 0, NULL, NULL);
-    printErrorCode(&clStatus);
-    clStatus = clEnqueueWriteBuffer(command_queue, xvel, CL_TRUE, 0, particle_count * sizeof(float), xvelarr, 0, NULL, NULL);
-    printErrorCode(&clStatus);
-    clStatus = clEnqueueWriteBuffer(command_queue, yvel, CL_TRUE, 0, particle_count * sizeof(float), yvelarr, 0, NULL, NULL);
-    printErrorCode(&clStatus);
-    clStatus = clEnqueueWriteBuffer(command_queue, zvel, CL_TRUE, 0, particle_count * sizeof(float), zvelarr, 0, NULL, NULL);
-    printErrorCode(&clStatus);
-    clStatus = clEnqueueWriteBuffer(command_queue, mass, CL_TRUE, 0, particle_count * sizeof(float), massarr, 0, NULL, NULL);
-    printErrorCode(&clStatus);
-    clStatus = clEnqueueWriteBuffer(command_queue, n_particles, CL_TRUE, 0, sizeof(int), &particle_count, 0, NULL, NULL);
-    printErrorCode(&clStatus);
-    size_t global_item_size = particle_count;
-    size_t local_item_size = 1;
-
-    clStatus = clEnqueueNDRangeKernel(command_queue,kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
-    printErrorCode(&clStatus);
-    clFinish(command_queue);
-    //std::cout << xposarr[0] << std::endl;
-    clEnqueueReadBuffer(command_queue, xposres, CL_TRUE, 0, particle_count * sizeof(float), xposarr, NULL, NULL, NULL);
-    
-    clEnqueueReadBuffer(command_queue, yposres, CL_TRUE, 0, particle_count * sizeof(float), yposarr, NULL, NULL, NULL);
-    clEnqueueReadBuffer(command_queue, zposres, CL_TRUE, 0, particle_count * sizeof(float), zposarr, NULL, NULL, NULL);
-    
-    clEnqueueReadBuffer(command_queue, xvelres, CL_TRUE, 0, particle_count * sizeof(float), xvelarr, NULL, NULL, NULL);
-    clEnqueueReadBuffer(command_queue, yvelres, CL_TRUE, 0, particle_count * sizeof(float), yvelarr, NULL, NULL, NULL);
-    clEnqueueReadBuffer(command_queue, zvelres, CL_TRUE, 0, particle_count * sizeof(float), zvelarr, NULL, NULL, NULL);
-    clFinish(command_queue);
-    */
-    
     
     // ---- Write to buffers for accPredictor ---- //
     
+    // -- accPredictor writes to predicted pos, vel and current acc and current jerk -- //
+    size_t global_item_size = particle_count;
+    size_t local_item_size = 1;
+    
+    clFinish(command_queue);
     cl_int clStatus;
-    clStatus = clEnqueueWriteBuffer(command_queue, xpos, CL_TRUE, 0, particle_count * sizeof(float), xposarr, 0, NULL, NULL);
+    clStatus = clEnqueueNDRangeKernel(command_queue, accPredictor, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
+    clFinish(command_queue);
     printErrorCode(&clStatus);
-    clStatus = clEnqueueWriteBuffer(command_queue, ypos, CL_TRUE, 0, particle_count * sizeof(float), yposarr, 0, NULL, NULL);
-    printErrorCode(&clStatus);
-    clStatus = clEnqueueWriteBuffer(command_queue, zpos, CL_TRUE, 0, particle_count * sizeof(float), zposarr, 0, NULL, NULL);
-    printErrorCode(&clStatus);
-    clStatus = clEnqueueWriteBuffer(command_queue, xvel, CL_TRUE, 0, particle_count * sizeof(float), xvelarr, 0, NULL, NULL);
-    printErrorCode(&clStatus);
-    clStatus = clEnqueueWriteBuffer(command_queue, yvel, CL_TRUE, 0, particle_count * sizeof(float), yvelarr, 0, NULL, NULL);
-    printErrorCode(&clStatus);
-    clStatus = clEnqueueWriteBuffer(command_queue, zvel, CL_TRUE, 0, particle_count * sizeof(float), zvelarr, 0, NULL, NULL);
-    printErrorCode(&clStatus);
-    clStatus = clEnqueueWriteBuffer(command_queue, mass, CL_TRUE, 0, particle_count * sizeof(float), massarr, 0, NULL, NULL);
-    printErrorCode(&clStatus);
-    clStatus = clEnqueueWriteBuffer(command_queue, n_particles, CL_TRUE, 0, sizeof(int), &particle_count, 0, NULL, NULL);
+    //clStatus = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, &global_item_size, &local_item_size, 0, NULL, NULL);
+    //clFinish(command_queue);
     printErrorCode(&clStatus);
     
-    clEnqueueTask(command_queue, accPredictor, NULL, NULL, NULL);
+    
+    float* testarr = new float[particle_count];
+    
+    clEnqueueReadBuffer(command_queue, xposp, CL_TRUE, 0, particle_count * sizeof(float), xposarr, NULL, NULL, NULL);
+    clEnqueueReadBuffer(command_queue, yposp, CL_TRUE, 0, particle_count * sizeof(float), yposarr, NULL, NULL, NULL);
+    clEnqueueReadBuffer(command_queue, zposp, CL_TRUE, 0, particle_count * sizeof(float), zposarr, NULL, NULL, NULL);
+    
+    clEnqueueReadBuffer(command_queue, xvelp, CL_TRUE, 0, particle_count * sizeof(float), xvelarr, NULL, NULL, NULL);
+    clEnqueueReadBuffer(command_queue, yvelp, CL_TRUE, 0, particle_count * sizeof(float), yvelarr, NULL, NULL, NULL);
+    clEnqueueReadBuffer(command_queue, zvelp, CL_TRUE, 0, particle_count * sizeof(float), zvelarr, NULL, NULL, NULL);
+    
     clFinish(command_queue);
     
-    clEnqueueTask(command_queue, kernel, NULL, NULL, NULL);
-    
-    clEnqueueReadBuffer(command_queue, xposres, CL_TRUE, 0, particle_count * sizeof(float), xposarr, NULL, NULL, NULL);
-    
-    clEnqueueReadBuffer(command_queue, yposres, CL_TRUE, 0, particle_count * sizeof(float), yposarr, NULL, NULL, NULL);
-    clEnqueueReadBuffer(command_queue, zposres, CL_TRUE, 0, particle_count * sizeof(float), zposarr, NULL, NULL, NULL);
-    
-    clEnqueueReadBuffer(command_queue, xvelres, CL_TRUE, 0, particle_count * sizeof(float), xvelarr, NULL, NULL, NULL);
-    clEnqueueReadBuffer(command_queue, yvelres, CL_TRUE, 0, particle_count * sizeof(float), yvelarr, NULL, NULL, NULL);
-    clEnqueueReadBuffer(command_queue, zvelres, CL_TRUE, 0, particle_count * sizeof(float), zvelarr, NULL, NULL, NULL);
+    cout << "test arr [0] before: " << testarr[0] << " : " << testarr[1] << endl;
+    clEnqueueReadBuffer(command_queue, xposp, CL_TRUE, 0, particle_count * sizeof(float), testarr, NULL, NULL, NULL);
     clFinish(command_queue);
+    cout << "test arr [0] : " << testarr[0] << " : " << testarr[1] << endl;
+    cout << "xpos arr [0] and [1] : " << xposarr[0] << " : " << xposarr[1] << endl;
     
+    std::swap(xpos, xposp);
+    std::swap(ypos, yposp);
+    std::swap(zpos, zposp);
+    
+    std::swap(xvel, xvelp);
+    std::swap(yvel, yvelp);
+    std::swap(zvel, zvelp);
+    // -- Update cl_mem pointers -- //
+    /*
+    std::swap(xpos, xposres);
+    std::swap(ypos, yposres);
+    std::swap(zpos, zposres);
+    
+    std::swap(xvel, xvelres);
+    std::swap(yvel, yvelres);
+    std::swap(zvel, zvelres);
+    */
 }
 
 void GPUSimulator::appendState(int timestep) {

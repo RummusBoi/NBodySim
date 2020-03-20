@@ -139,17 +139,21 @@ __kernel void forcePredict (__global const float* xpos,
     int p = get_global_id(0);
     float pmass = mass[p];
     float dt = 0.001;
-    
+    /*
+    printf("kernel 1, pos %i : %f : %f\n", p, xpos[p], ypos[p]);
+    printf("kernel 1, xposp %i : %f\n", p, xposp[p]);
+    printf("kernel 1, xvel %i : %f\n", p, xvel[p]);*/
     /* ---- First calculate acceleration and jerk for the particle ---- */
 
     float dist = 0;
     float x_comp = 0;
     float y_comp = 0;
     float z_comp = 0;
-
+    
     float forceX = 0, forceY = 0, forceZ = 0;
     float jerkX = 0, jerkY = 0, jerkZ = 0;
-    for (int i = 0; i < particle_count; i++) {
+    for (int i = 0; i < *particle_count; i++) {
+        if (i == p) continue;
         calcDistanceAndComponent(xpos[p], ypos[p], zpos[p], xpos[i], ypos[i], zpos[i], &dist, &x_comp, &y_comp, &z_comp);
         calcForceVector (dist, pmass, mass[i], x_comp, y_comp, z_comp, &forceX, &forceY, &forceZ);
         
@@ -168,15 +172,17 @@ __kernel void forcePredict (__global const float* xpos,
 
     /* ---- Now calculate Taylor expansion for position and velocity from acceleration and jerk ---- */
 
-    float xpos_p = xpos[p] + xvel[p] * dt + 0.5 * accX * dt * dt + 1.0 / 6.0 * jerkX * dt * dt *dt;
-    float ypos_p = xpos[p] + xvel[p] * dt + 0.5 * accX * dt * dt + 1.0 / 6.0 * jerkX * dt * dt *dt;
-    float zpos_p = xpos[p] + xvel[p] * dt + 0.5 * accX * dt * dt + 1.0 / 6.0 * jerkX * dt * dt *dt;
+    float xpos_p = xpos[p] + xvel[p] * dt + 0.5 * accX * dt * dt + 1.0 / 6.0 * jerkX * dt * dt * dt;
+    float ypos_p = ypos[p] + yvel[p] * dt + 0.5 * accY * dt * dt + 1.0 / 6.0 * jerkY * dt * dt *dt;
+    float zpos_p = zpos[p] + zvel[p] * dt + 0.5 * accZ * dt * dt + 1.0 / 6.0 * jerkZ * dt * dt *dt;
 
     float xvel_p = xvel[p] + accX * dt + 0.5 * jerkX * dt * dt;
     float yvel_p = yvel[p] + accY * dt + 0.5 * jerkY * dt * dt;
     float zvel_p = zvel[p] + accZ * dt + 0.5 * jerkZ * dt * dt;
-
-
+/*
+    printf("kernel 1, xpos_p %i : %f\n", p, xpos_p);
+    printf("kernel 1, jerkX %i : %f\n", p, jerkX);
+*/
 
     x0acc[p] = accX;
     y0acc[p] = accY;
@@ -186,9 +192,13 @@ __kernel void forcePredict (__global const float* xpos,
     y0jerk[p] = jerkY;
     z0jerk[p] = jerkZ;
 
+    printf("kernel 1, xpos_p %i : %f\n", p, xpos_p);
+    printf("kernel 1, xpos %i : %f\n", p, xpos[p]);
     xposp[p] = xpos_p;
     yposp[p] = ypos_p;
     zposp[p] = zpos_p;
+
+    printf("kernel 1, xposp[0] %i : %f\n", p, xposp[p]);
 
     xvelp[p] = xvel_p;
     yvelp[p] = yvel_p;
@@ -222,14 +232,22 @@ __kernel void hermiteIntegrator(__global const float* xpos,
                                 __global float* yvelres, 
                                 __global float* zvelres ) {
     int p = get_global_id(0);
-    
+
+    float dt = 0.001;
+    /*
+    printf("kernel 2, pos %i : %f : %f\n", p, xpos[p], ypos[p]);
+    printf("kernel 2, xpos %i : %f\n", p, xpos[p]);
+    printf("kernel 2, xposp %i : %f\n", p, xposp[p]);
+    */
     float forcepX = 0, forcepY = 0, forcepZ = 0;
     float jerkpX = 0, jerkpY = 0, jerkpZ = 0;
     float dist = 0, pmass = mass[p];
 
     float x_comp = 0, y_comp = 0, z_comp = 0;
     /* ---- Calculate predicted acceleration and jerk ---- */
-    for (int i = 0; i < particle_count; i++) {
+    
+    for (int i = 0; i < *particle_count; i++) {
+        if(i == p) continue;
         calcDistanceAndComponent(xposp[p], yposp[p], zposp[p], xposp[i], yposp[i], zposp[i], &dist, &x_comp, &y_comp, &z_comp);
         calcForceVector (dist, pmass, mass[i], x_comp, y_comp, z_comp, &forcepX, &forcepY, &forcepZ);
         
@@ -248,15 +266,17 @@ __kernel void hermiteIntegrator(__global const float* xpos,
     float xvel_f = xvel[p] + 0.5 * (xacc0[p] + accpX) * dt + 1.0 / 12.0 * (xjerk0[p] - jerkpX) * dt * dt;
     float yvel_f = yvel[p] + 0.5 * (yacc0[p] + accpY) * dt + 1.0 / 12.0 * (yjerk0[p] - jerkpY) * dt * dt;
     float zvel_f = zvel[p] + 0.5 * (zacc0[p] + accpZ) * dt + 1.0 / 12.0 * (zjerk0[p] - jerkpZ) * dt * dt;
+    
+    float xpos_f = xpos[p] + 0.5 * (xvel[p] + xvel_f) * dt + 1.0 / 12.0 * (xacc0[p] - accpX) * dt * dt;
+    float ypos_f = ypos[p] + 0.5 * (yvel[p] + yvel_f) * dt + 1.0 / 12.0 * (yacc0[p] - accpY) * dt * dt;
+    float zpos_f = zpos[p] + 0.6 * (zvel[p] + zvel_f) * dt + 1.0 / 12.0 * (zacc0[p] - accpZ) * dt * dt;
 
-    float xpos_f = xpos[p] + 1.0 / 2.0 * (xvel[p] + xvel_f) * dt + 1.0 / 12.0 * (xacc0[p] - accpX) * dt * dt;
-    float ypos_f = ypos[p] + 1.0 / 2.0 * (yvel[p] + yvel_f) * dt + 1.0 / 12.0 * (yacc0[p] - accpY) * dt * dt;
-    float zpos_f = zpos[p] + 1.0 / 2.0 * (zvel[p] + zvel_f) * dt + 1.0 / 12.0 * (zacc0[p] - accpZ) * dt * dt;
-
+    printf("kernel 2, xposres[p] %i : %f\n", p, xposres[p]);
     xposres[p] = xpos_f;
+    printf("kernel 2, xposres[p] %i : %f\n", p, xposres[p]);
     yposres[p] = ypos_f;
     zposres[p] = zpos_f;
-
+    
     xvelres[p] = xvel_f;
     yvelres[p] = yvel_f;
     zvelres[p] = zvel_f;
