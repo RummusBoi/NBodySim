@@ -110,20 +110,22 @@ void calcDistanceAndComponent (float x1, float y1, float z1, float x2, float y2,
 
 void calcForceVector (float dist, float mass1, float mass2, float x_comp, float y_comp, float z_comp, float* forceX, float* forceY, float* forceZ) {
     float G = 6.67 * 0.00000000001;
-    float total_force = G * mass1 * mass2 / (dist+1) / (dist+1);
+    float total_force = G * mass1 * mass2 / (dist) / (dist);
     *forceX += total_force * x_comp;
     *forceY += total_force * y_comp;
     *forceZ += total_force * z_comp;
 }
 
-__kernel void forcePredict (__global const float* xpos, 
-                            __global const float* ypos, 
-                            __global const float* zpos, 
-                            __global const float* xvel, 
-                            __global const float* yvel, 
-                            __global const float* zvel, 
-                            __global const float* mass,
-                            __global const int* particle_count,
+
+
+__kernel void forcePredict (__global float* xpos, 
+                            __global float* ypos, 
+                            __global float* zpos, 
+                            __global float* xvel, 
+                            __global float* yvel, 
+                            __global float* zvel, 
+                            __global float* mass,
+                            __global int* particle_count,
                             __global float* xposp,
                             __global float* yposp,
                             __global float* zposp,
@@ -138,7 +140,7 @@ __kernel void forcePredict (__global const float* xpos,
                             __global float* z0jerk) {
     int p = get_global_id(0);
     float pmass = mass[p];
-    float dt = 0.001;
+    float dt = 2.5;
     /*
     printf("kernel 1, pos %i : %f : %f\n", p, xpos[p], ypos[p]);
     printf("kernel 1, xposp %i : %f\n", p, xposp[p]);
@@ -152,17 +154,18 @@ __kernel void forcePredict (__global const float* xpos,
     
     float forceX = 0, forceY = 0, forceZ = 0;
     float jerkX = 0, jerkY = 0, jerkZ = 0;
+    float G = 6.67 * 0.00000000001;
+
     for (int i = 0; i < *particle_count; i++) {
         if (i == p) continue;
         calcDistanceAndComponent(xpos[p], ypos[p], zpos[p], xpos[i], ypos[i], zpos[i], &dist, &x_comp, &y_comp, &z_comp);
-        calcForceVector (dist, pmass, mass[i], x_comp, y_comp, z_comp, &forceX, &forceY, &forceZ);
+        float sdist = dist + 10000;
+        calcForceVector (sdist, pmass, mass[i], x_comp, y_comp, z_comp, &forceX, &forceY, &forceZ);
         
 
         float relvel [3] = {xvel[i] - xvel[p], yvel[i] - yvel[p], zvel[i] - zvel[p]};
-        float vdotr = relvel[0] * (x_comp * dist) + relvel[1] * (y_comp * dist) + relvel[2] * (z_comp * dist);
+        float vdotr = relvel[0] * (x_comp * sdist) + relvel[1] * (y_comp * sdist) + relvel[2] * (z_comp * sdist);
 
-        float sdist = dist + 1;
-        float G = 6.67 * 0.00000000001;
         jerkX += G * mass[i] * (relvel[0] / (sdist * sdist * sdist) - 3 * (vdotr) * (x_comp * sdist) / (sdist*sdist*sdist*sdist*sdist));
         jerkY += G * mass[i] * (relvel[1] / (sdist * sdist * sdist) - 3 * (vdotr) * (y_comp * sdist) / (sdist*sdist*sdist*sdist*sdist));
         jerkZ += G * mass[i] * (relvel[2] / (sdist * sdist * sdist) - 3 * (vdotr) * (z_comp * sdist) / (sdist*sdist*sdist*sdist*sdist));
@@ -191,14 +194,14 @@ __kernel void forcePredict (__global const float* xpos,
     x0jerk[p] = jerkX;
     y0jerk[p] = jerkY;
     z0jerk[p] = jerkZ;
-
+    /*
     printf("kernel 1, xpos_p %i : %f\n", p, xpos_p);
-    printf("kernel 1, xpos %i : %f\n", p, xpos[p]);
+    printf("kernel 1, xpos %i : %f\n", p, xpos[p]);*/
     xposp[p] = xpos_p;
     yposp[p] = ypos_p;
     zposp[p] = zpos_p;
-
-    printf("kernel 1, xposp[0] %i : %f\n", p, xposp[p]);
+/*
+    printf("kernel 1, xposp[0] %i : %f\n", p, xposp[p]);*/
 
     xvelp[p] = xvel_p;
     yvelp[p] = yvel_p;
@@ -233,7 +236,7 @@ __kernel void hermiteIntegrator(__global const float* xpos,
                                 __global float* zvelres ) {
     int p = get_global_id(0);
 
-    float dt = 0.001;
+    float dt = 2.5;
     /*
     printf("kernel 2, pos %i : %f : %f\n", p, xpos[p], ypos[p]);
     printf("kernel 2, xpos %i : %f\n", p, xpos[p]);
@@ -249,13 +252,13 @@ __kernel void hermiteIntegrator(__global const float* xpos,
     for (int i = 0; i < *particle_count; i++) {
         if(i == p) continue;
         calcDistanceAndComponent(xposp[p], yposp[p], zposp[p], xposp[i], yposp[i], zposp[i], &dist, &x_comp, &y_comp, &z_comp);
-        calcForceVector (dist, pmass, mass[i], x_comp, y_comp, z_comp, &forcepX, &forcepY, &forcepZ);
+        float sdist = dist + 10000;
+        calcForceVector (sdist, pmass, mass[i], x_comp, y_comp, z_comp, &forcepX, &forcepY, &forcepZ);
         
 
         float relvel [3] = {xvelp[i] - xvelp[p], yvelp[i] - yvelp[p], zvelp[i] - zvelp[p]};
-        float vdotr = relvel[0] * (x_comp * dist) + relvel[1] * (y_comp * dist) + relvel[2] * (z_comp * dist);
+        float vdotr = relvel[0] * (x_comp * sdist) + relvel[1] * (y_comp * sdist) + relvel[2] * (z_comp * sdist);
 
-        float sdist = dist + 1;
         float G = 6.67 * 0.00000000001;
         jerkpX += G * mass[i] * (relvel[0] / (sdist * sdist * sdist) - 3 * (vdotr) * (x_comp * sdist) / (sdist*sdist*sdist*sdist*sdist));
         jerkpY += G * mass[i] * (relvel[1] / (sdist * sdist * sdist) - 3 * (vdotr) * (y_comp * sdist) / (sdist*sdist*sdist*sdist*sdist));
@@ -270,10 +273,10 @@ __kernel void hermiteIntegrator(__global const float* xpos,
     float xpos_f = xpos[p] + 0.5 * (xvel[p] + xvel_f) * dt + 1.0 / 12.0 * (xacc0[p] - accpX) * dt * dt;
     float ypos_f = ypos[p] + 0.5 * (yvel[p] + yvel_f) * dt + 1.0 / 12.0 * (yacc0[p] - accpY) * dt * dt;
     float zpos_f = zpos[p] + 0.6 * (zvel[p] + zvel_f) * dt + 1.0 / 12.0 * (zacc0[p] - accpZ) * dt * dt;
-
-    printf("kernel 2, xposres[p] %i : %f\n", p, xposres[p]);
-    xposres[p] = xpos_f;
-    printf("kernel 2, xposres[p] %i : %f\n", p, xposres[p]);
+/*
+    printf("kernel 2, xposres[p] %i : %f\n", p, xposres[p]);*/
+    xposres[p] = xpos_f;/*
+    printf("kernel 2, xposres[p] %i : %f\n", p, xposres[p]);*/
     yposres[p] = ypos_f;
     zposres[p] = zpos_f;
     

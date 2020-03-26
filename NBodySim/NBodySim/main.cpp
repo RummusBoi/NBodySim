@@ -14,27 +14,52 @@ using namespace std;
 
 int main(int argc, const char * argv[]) {
     
-    GPUSimulator sim = GPUSimulator();
+    int timesteps = 2000;
+    int particle_count = 2048;
+    int stepsPerSavedFrame = 20;
+    GPUSimulator sim = GPUSimulator(timesteps / stepsPerSavedFrame, particle_count);
     cout << "setup done, setting state" << endl;
     sim.setInitialState();
-    int timesteps = 500;
     
     auto t1 = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < timesteps; i++) {
-        
-        sim.appendState(i);
-        sim.runGen();
-    }
-    auto t2 = std::chrono::high_resolution_clock::now();
     
-    cout << "Completed simulation in " << std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() << " ms." << endl;
+    float initEnergy = sim.calcTotalEnergy();
+    
+    for (int i = 0; i < timesteps; i++) {
+        if(i % stepsPerSavedFrame == 0) {
+            sim.appendState(i / stepsPerSavedFrame);
+            cout << i / (double)timesteps * 100 << "% done" << endl;
+            //cout << "Energy at step " << i << ": " << sim.calcTotalEnergy() << endl;
+        }
+        /*
+        cout << "Running gen " << i << endl;
+        auto start = std::chrono::high_resolution_clock::now();
+        */
+        sim.runGen();
+        /*
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
+        cout << "Duration " << duration << "ms" << endl;
+        */
+        
+    }
+    
+    float finalEnergy = sim.calcTotalEnergy();
+    
+    cout << "Change in energy: " << (finalEnergy - initEnergy) / initEnergy * 100 << "%" << endl;
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count();
+    cout << "Completed simulation in " << duration << " ms." << endl;
+    
+    
     
     float** xarrs,** yarrs,** zarrs;
     sim.getStoredData(&xarrs, &yarrs, &zarrs);
     
+    
     DataPlotter dataplotter = DataPlotter(1400, 1400);
     
     cout << "shit" << endl;
-    dataplotter.draw3DData(xarrs, yarrs, zarrs, 2, timesteps);
+    dataplotter.draw3DData(xarrs, yarrs, zarrs, particle_count, timesteps / stepsPerSavedFrame);
     return 0;
 }

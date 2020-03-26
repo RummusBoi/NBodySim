@@ -65,10 +65,12 @@ private:
     float** prevys;
     float** prevzs;
     
-    int particle_count = 2;
-    int time_steps = 500;
+    int iteration;
+    
+    int particle_count;
+    int time_steps;
 public:
-    GPUSimulator();
+    GPUSimulator(int time_steps, int particle_count);
     void runGen();
     void setState ( float* xpos,
                     float* ypos,
@@ -82,5 +84,6 @@ public:
     void printState();
     void saveStateToFile ();
     void getStoredData (float*** xarr, float*** yarr, float*** zarr);
+    float calcTotalEnergy();
 };
 #endif /* GPUSimulator_hpp */

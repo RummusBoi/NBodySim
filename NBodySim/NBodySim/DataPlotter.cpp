@@ -13,7 +13,6 @@ DataPlotter::DataPlotter(int width, int height) {
     this->width = width;
     this->height = height;
     
-    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
 }
 
 void DataPlotter::feedNew3DFrame(float *xarr, float *yarr, float *zarr, int size) {
@@ -21,20 +20,22 @@ void DataPlotter::feedNew3DFrame(float *xarr, float *yarr, float *zarr, int size
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     
-    float eyeZ = -1000;
-    float planeZ = -500;
+    double eyeZ = -100000000.0 * 1000.0;
+    double planeZ = eyeZ + 1000000.0;
     
     for (int i = 0; i < size; i ++) {
-        int xproj = xarr[i] * eyeZ / (eyeZ + (zarr[i] + planeZ));
-        int yproj = yarr[i] * eyeZ / (eyeZ + (zarr[i] + planeZ));
+        float xproj = xarr[i] * (eyeZ - planeZ) / (zarr[i] + planeZ);
+        float yproj = yarr[i] * (eyeZ - planeZ) / (zarr[i] + planeZ);
+        //std::cout << i << " : " << xproj << std::endl;
+        //std::cout << (eyeZ - planeZ) << " and " << (zarr[i] + planeZ) << std::endl;
         xproj += width / 2;
         yproj += height / 2;
         //SDL_RenderDrawPoint(renderer, xproj, yproj);
         SDL_Rect rect;
         rect.x = xproj;
         rect.y = yproj;
-        rect.w = 5;
-        rect.h = 5;
+        rect.w = 2;
+        rect.h = 2;
         
         SDL_RenderDrawRect(renderer, &rect);
     }
@@ -65,13 +66,13 @@ void DataPlotter::draw3DData (float **xarrs, float **yarrs, float **zarrs, int p
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
     SDL_RenderClear(renderer);
     feedNew3DFrame(xarrs[0], yarrs[0], zarrs[0], particles);
-    int stepsPerFrame = 50;
+    int stepsPerFrame = 1;
     while (running) {
 
         if(step % stepsPerFrame == 0) {
             feedNew3DFrame(xarrs[step], yarrs[step], zarrs[step], particles);
             if (!paused) {
-                SDL_Delay(10);
+                SDL_Delay(30);
             }
         }
         
@@ -88,10 +89,10 @@ void DataPlotter::draw3DData (float **xarrs, float **yarrs, float **zarrs, int p
                     paused = !paused;
                 }
                 if (event.key.keysym.sym == SDLK_LEFT) {
-                    step -= 3*stepsPerFrame;
+                    step -= stepsPerFrame;
                 }
                 if (event.key.keysym.sym == SDLK_RIGHT) {
-                    step += 3*stepsPerFrame;
+                    step += stepsPerFrame;
                 }
                 if (event.key.keysym.sym == SDLK_r) {
                     step = 0;
