@@ -11,7 +11,7 @@
 
 #include <stdio.h>
 #define __CL_ENABLE_EXCEPTIONS
-#include <OpenCL/opencl.h>
+#include<CL/cl.h>
 class GPUSimulator {
 private:
     cl_mem xpos;
@@ -53,17 +53,17 @@ private:
     cl_kernel kernel;
     cl_kernel accPredictor;
     
-    float* xposarr;
-    float* yposarr;
-    float* zposarr;
-    float* xvelarr;
-    float* yvelarr;
-    float* zvelarr;
-    float* massarr;
+    double* xposarr;
+    double* yposarr;
+    double* zposarr;
+    double* xvelarr;
+    double* yvelarr;
+    double* zvelarr;
+    double* massarr;
     
-    float** prevxs;
-    float** prevys;
-    float** prevzs;
+    double** prevxs;
+    double** prevys;
+    double** prevzs;
     
     int iteration;
     
@@ -72,18 +72,18 @@ private:
 public:
     GPUSimulator(int time_steps, int particle_count);
     void runGen();
-    void setState ( float* xpos,
-                    float* ypos,
-                    float* zpos,
-                    float* xvel,
-                    float* yvel,
-                    float* zvel,
-                    float* mass );
+    void setState ( double* xpos,
+                    double* ypos,
+                    double* zpos,
+                    double* xvel,
+                    double* yvel,
+                    double* zvel,
+                    double* mass );
     void setInitialState();
     void appendState(int timestep);
     void printState();
     void saveStateToFile ();
-    void getStoredData (float*** xarr, float*** yarr, float*** zarr);
+    void getStoredData (double*** xarr, double*** yarr, double*** zarr);
     float calcTotalEnergy();
 };
 #endif /* GPUSimulator_hpp */

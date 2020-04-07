@@ -10,7 +10,8 @@
 #define DataPlotter_hpp
 
 #include <stdio.h>
-#include <SDL2/SDL.h>
+#include <SDL.h>
+#undef main
 
 class DataPlotter{
 private:
@@ -19,9 +20,9 @@ private:
     SDL_Renderer* renderer;
 public:
     DataPlotter(int width, int height);
-    void feedNew3DFrame (float* xarr, float* yarr, float* zarr, int size);
+    void feedNew3DFrame (double* xarr, double* yarr, double* zarr, int size);
     void updateFrame();
-    void draw3DData(float **xarrs, float **yarrs, float **zarrs, int particles, int timesteps);
+    void draw3DData(double **xarrs, double **yarrs, double **zarrs, int particles, int timesteps);
     
 };
 

@@ -15,12 +15,12 @@ DataPlotter::DataPlotter(int width, int height) {
     
 }
 
-void DataPlotter::feedNew3DFrame(float *xarr, float *yarr, float *zarr, int size) {
+void DataPlotter::feedNew3DFrame(double *xarr, double *yarr, double *zarr, int size) {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 0);
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     
-    double eyeZ = -100000000.0 * 1000.0;
+    double eyeZ = -1000000000.0 * 1000.0;
     double planeZ = eyeZ + 1000000.0;
     
     for (int i = 0; i < size; i ++) {
@@ -42,13 +42,13 @@ void DataPlotter::feedNew3DFrame(float *xarr, float *yarr, float *zarr, int size
     SDL_RenderPresent(renderer);
 }
 
-void DataPlotter::draw3DData (float **xarrs, float **yarrs, float **zarrs, int particles, int timesteps) {
+void DataPlotter::draw3DData (double **xarrs, double **yarrs, double **zarrs, int particles, int timesteps) {
     SDL_Window *window;                      // Declare a pointer
 
     SDL_Init(SDL_INIT_VIDEO);              // Initialize SDL2
 
     // Create an application window with the following settings:
-    SDL_CreateWindowAndRenderer(width/2, height/2, SDL_WINDOW_ALLOW_HIGHDPI, &window, &renderer);
+    SDL_CreateWindowAndRenderer(width, height, 0, &window, &renderer);
 
     // Check that the window was successfully created
     if (window == NULL) {

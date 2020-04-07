@@ -1,106 +1,10 @@
-void calcDistanceAndComponent (float x1, float y1, float z1, float x2, float y2, float z2, float* dist, float* x_comp, float* y_comp, float* z_comp);
-void calcForceVector (float dist, float mass1, float mass2, float x_comp, float y_comp, float z_comp, float* forceX, float* forceY, float* forceZ);
-__kernel void mykernel( __global const float* xpos, 
-                        __global const float* ypos, 
-                        __global const float* zpos, 
-                        __global const float* xvel, 
-                        __global const float* yvel, 
-                        __global const float* zvel, 
-                        __global const float* mass,
-                        __global const int* particle_count,
-                        __global float* xposres, 
-                        __global float* yposres, 
-                        __global float* zposres, 
-                        __global float* xvelres, 
-                        __global float* yvelres, 
-                        __global float* zvelres) {
-    int p = get_global_id(0);
-    float dt = 0.001;
+void calcDistanceAndComponent (double x1, double y1, double z1, double x2, double y2, double z2, double* dist, double* x_comp, double* y_comp, double* z_comp);
+void calcForceVector (double dist, double mass1, double mass2, double x_comp, double y_comp, double z_comp, double* forceX, double* forceY, double* forceZ);
 
-    float pmass = mass[p];
-    float px = xpos[p];
-    float py = ypos[p];
-    float pz = zpos[p];
-
-    float pxvel = xvel[p];
-    float pyvel = yvel[p];
-    float pzvel = zvel[p];
-    
-    float forceX = 0, forceY = 0, forceZ = 0;
-    float dist = 0, x_comp = 0, y_comp = 0, z_comp = 0;
-
-    float particleR = 3;
-    float Cr = 0.95;
-
-    for (int i = 0; i < *particle_count; i++) {
-        if (i == p) continue;
-        calcDistanceAndComponent(xpos[p], ypos[p], zpos[p], xpos[i], ypos[i], zpos[i], &dist, &x_comp, &y_comp, &z_comp);
-        calcForceVector (dist, pmass, mass[i], x_comp, y_comp, z_comp, &forceX, &forceY, &forceZ);   
-        /*
-        /* collision 
-        if (dist > 2 * particleR) {
-            calcForceVector (dist, pmass, mass[i], x_comp, y_comp, z_comp, &forceX, &forceY, &forceZ);     
-        } else {
-            float n_x = (xpos[i] - px) / dist;
-            float n_y = (ypos[i] - py) / dist;
-            float n_z = (zpos[i] - pz) / dist;
-
-            float v_p1_n = ((pxvel * n_x) + (pyvel * n_y) + (pyvel * n_z)) / sqrt(n_x*n_x + n_y*n_y + n_z*n_z);
-            float v_p2_n = ((xvel[i] * n_x) + (yvel[i] * n_y) + (zvel[i] * n_z)) / sqrt(n_x*n_x + n_y*n_y + n_z*n_z);
-
-            
-
-            float normalImpulse = float(pmass * mass[i]) / float(pmass + mass[i]) * (1.0 + Cr) * (v_p2_n - v_p1_n);
-            /*printf("normal impulse %f\n", normalImpulse);
-            
-
-            printf("x normal %f\n", n_x);
-
-            float G = 6.67 * 0.00000000001;
-            float epot = -G * pmass * mass[i] / dist;
-            float ekin = 1.0 / 2.0 * pmass * sqrt(pxvel*pxvel + pyvel*pyvel + pzvel*pzvel) * sqrt(pxvel*pxvel + pyvel*pyvel + pzvel*pzvel);
-
-            if (p == 0) {
-                printf("vel 1 %f : %f : %f\n", pxvel, pyvel, pzvel);
-                printf("epot %f\n", epot / 1000000000000000);
-                printf("ekin %f\n", ekin / 1000000000000000);
-                printf("energy before %f\n", (epot+ekin) / 1000000000000000);
-            }
-            pxvel += normalImpulse / pmass * n_x;
-            pyvel += normalImpulse / pmass * n_y;
-            pzvel += normalImpulse / pmass * n_z;
-            
-            ekin = 1.0 / 2.0 * pmass * sqrt(pxvel*pxvel + pyvel*pyvel + pzvel*pzvel) * sqrt(pxvel*pxvel + pyvel*pyvel + pzvel*pzvel);
-            if(p == 0) {
-                printf("vel 2 %f : %f : %f\n", pxvel, pyvel, pzvel);
-                printf("energy after %f\n--------\n", (epot+ekin) / 1000000000000000);
-            }
-            /*printf("new vel %f\n", pxvel);
-        }
-        */
-    }
-
-    float accX = forceX / pmass;
-    float accY = forceY / pmass;
-    float accZ = forceZ / pmass;
-
-    pxvel = pxvel + dt * accX;
-    pyvel = pyvel + dt * accY;
-    pzvel = pzvel + dt * accZ;
-
-    xposres[p] = px + pxvel * dt;
-    yposres[p] = py + pyvel * dt;
-    zposres[p] = pz + pzvel * dt;
-
-    xvelres[p] = pxvel;
-    yvelres[p] = pyvel;
-    zvelres[p] = pzvel;
-}
-
-void calcDistanceAndComponent (float x1, float y1, float z1, float x2, float y2, float z2, float* dist, float* x_comp, float* y_comp, float* z_comp) {
-    float dx = x2 - x1;
-    float dy = y2 - y1;
-    float dz = z2 - z1;
+void calcDistanceAndComponent (double x1, double y1, double z1, double x2, double y2, double z2, double* dist, double* x_comp, double* y_comp, double* z_comp) {
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+    double dz = z2 - z1;
 
     *dist = sqrt(dx*dx + dy*dy + dz*dz);
     *x_comp = dx / *dist;
@@ -108,84 +12,73 @@ void calcDistanceAndComponent (float x1, float y1, float z1, float x2, float y2,
     *z_comp = dz / *dist;
 }
 
-void calcForceVector (float dist, float mass1, float mass2, float x_comp, float y_comp, float z_comp, float* forceX, float* forceY, float* forceZ) {
-    float G = 6.67 * 0.00000000001;
-    float total_force = G * mass1 * mass2 / (dist) / (dist);
+void calcForceVector (double dist, double mass1, double mass2, double x_comp, double y_comp, double z_comp, double* forceX, double* forceY, double* forceZ) {
+    double G = 6.67 * 0.00000000001;
+    double total_force = G * mass1 * mass2 / (dist) / (dist);
     *forceX += total_force * x_comp;
     *forceY += total_force * y_comp;
     *forceZ += total_force * z_comp;
 }
 
-
-
-__kernel void forcePredict (__global float* xpos, 
-                            __global float* ypos, 
-                            __global float* zpos, 
-                            __global float* xvel, 
-                            __global float* yvel, 
-                            __global float* zvel, 
-                            __global float* mass,
+__kernel void forcePredict (__global double* xpos, 
+                            __global double* ypos, 
+                            __global double* zpos, 
+                            __global double* xvel, 
+                            __global double* yvel, 
+                            __global double* zvel, 
+                            __global double* mass,
                             __global int* particle_count,
-                            __global float* xposp,
-                            __global float* yposp,
-                            __global float* zposp,
-                            __global float* xvelp,
-                            __global float* yvelp,
-                            __global float* zvelp,
-                            __global float* x0acc,
-                            __global float* y0acc,
-                            __global float* z0acc,
-                            __global float* x0jerk,
-                            __global float* y0jerk,
-                            __global float* z0jerk) {
+                            __global double* xposp,
+                            __global double* yposp,
+                            __global double* zposp,
+                            __global double* xvelp,
+                            __global double* yvelp,
+                            __global double* zvelp,
+                            __global double* x0acc,
+                            __global double* y0acc,
+                            __global double* z0acc,
+                            __global double* x0jerk,
+                            __global double* y0jerk,
+                            __global double* z0jerk) {
     int p = get_global_id(0);
-    float pmass = mass[p];
-    float dt = 2.5;
-    /*
-    printf("kernel 1, pos %i : %f : %f\n", p, xpos[p], ypos[p]);
-    printf("kernel 1, xposp %i : %f\n", p, xposp[p]);
-    printf("kernel 1, xvel %i : %f\n", p, xvel[p]);*/
-    /* ---- First calculate acceleration and jerk for the particle ---- */
+    double pmass = mass[p];
+    double dt = 0.5;
 
-    float dist = 0;
-    float x_comp = 0;
-    float y_comp = 0;
-    float z_comp = 0;
+    double dist = 0;
+    double x_comp = 0;
+    double y_comp = 0;
+    double z_comp = 0;
     
-    float forceX = 0, forceY = 0, forceZ = 0;
-    float jerkX = 0, jerkY = 0, jerkZ = 0;
-    float G = 6.67 * 0.00000000001;
+    double forceX = 0, forceY = 0, forceZ = 0;
+    double jerkX = 0, jerkY = 0, jerkZ = 0;
+    double G = 6.67 * 0.00000000001;
 
     for (int i = 0; i < *particle_count; i++) {
         if (i == p) continue;
         calcDistanceAndComponent(xpos[p], ypos[p], zpos[p], xpos[i], ypos[i], zpos[i], &dist, &x_comp, &y_comp, &z_comp);
-        float sdist = dist + 10000;
+        double sdist = dist + 10000;
         calcForceVector (sdist, pmass, mass[i], x_comp, y_comp, z_comp, &forceX, &forceY, &forceZ);
         
 
-        float relvel [3] = {xvel[i] - xvel[p], yvel[i] - yvel[p], zvel[i] - zvel[p]};
-        float vdotr = relvel[0] * (x_comp * sdist) + relvel[1] * (y_comp * sdist) + relvel[2] * (z_comp * sdist);
+        double relvel [3] = {xvel[i] - xvel[p], yvel[i] - yvel[p], zvel[i] - zvel[p]};
+        double vdotr = relvel[0] * (x_comp * sdist) + relvel[1] * (y_comp * sdist) + relvel[2] * (z_comp * sdist);
 
         jerkX += G * mass[i] * (relvel[0] / (sdist * sdist * sdist) - 3 * (vdotr) * (x_comp * sdist) / (sdist*sdist*sdist*sdist*sdist));
         jerkY += G * mass[i] * (relvel[1] / (sdist * sdist * sdist) - 3 * (vdotr) * (y_comp * sdist) / (sdist*sdist*sdist*sdist*sdist));
         jerkZ += G * mass[i] * (relvel[2] / (sdist * sdist * sdist) - 3 * (vdotr) * (z_comp * sdist) / (sdist*sdist*sdist*sdist*sdist));
     }
 
-    float accX = forceX / pmass, accY = forceY / pmass, accZ = forceZ / pmass;
+    double accX = forceX / pmass, accY = forceY / pmass, accZ = forceZ / pmass;
 
     /* ---- Now calculate Taylor expansion for position and velocity from acceleration and jerk ---- */
 
-    float xpos_p = xpos[p] + xvel[p] * dt + 0.5 * accX * dt * dt + 1.0 / 6.0 * jerkX * dt * dt * dt;
-    float ypos_p = ypos[p] + yvel[p] * dt + 0.5 * accY * dt * dt + 1.0 / 6.0 * jerkY * dt * dt *dt;
-    float zpos_p = zpos[p] + zvel[p] * dt + 0.5 * accZ * dt * dt + 1.0 / 6.0 * jerkZ * dt * dt *dt;
+    double xpos_p = xpos[p] + xvel[p] * dt + 0.5 * accX * dt * dt + 1.0 / 6.0 * jerkX * dt * dt * dt;
+    double ypos_p = ypos[p] + yvel[p] * dt + 0.5 * accY * dt * dt + 1.0 / 6.0 * jerkY * dt * dt *dt;
+    double zpos_p = zpos[p] + zvel[p] * dt + 0.5 * accZ * dt * dt + 1.0 / 6.0 * jerkZ * dt * dt *dt;
 
-    float xvel_p = xvel[p] + accX * dt + 0.5 * jerkX * dt * dt;
-    float yvel_p = yvel[p] + accY * dt + 0.5 * jerkY * dt * dt;
-    float zvel_p = zvel[p] + accZ * dt + 0.5 * jerkZ * dt * dt;
-/*
-    printf("kernel 1, xpos_p %i : %f\n", p, xpos_p);
-    printf("kernel 1, jerkX %i : %f\n", p, jerkX);
-*/
+    double xvel_p = xvel[p] + accX * dt + 0.5 * jerkX * dt * dt;
+    double yvel_p = yvel[p] + accY * dt + 0.5 * jerkY * dt * dt;
+    double zvel_p = zvel[p] + accZ * dt + 0.5 * jerkZ * dt * dt;
 
     x0acc[p] = accX;
     y0acc[p] = accY;
@@ -194,89 +87,79 @@ __kernel void forcePredict (__global float* xpos,
     x0jerk[p] = jerkX;
     y0jerk[p] = jerkY;
     z0jerk[p] = jerkZ;
-    /*
-    printf("kernel 1, xpos_p %i : %f\n", p, xpos_p);
-    printf("kernel 1, xpos %i : %f\n", p, xpos[p]);*/
+
     xposp[p] = xpos_p;
     yposp[p] = ypos_p;
     zposp[p] = zpos_p;
-/*
-    printf("kernel 1, xposp[0] %i : %f\n", p, xposp[p]);*/
 
     xvelp[p] = xvel_p;
     yvelp[p] = yvel_p;
     zvelp[p] = zvel_p;
 }
 
-__kernel void hermiteIntegrator(__global const float* xpos, 
-                                __global const float* ypos, 
-                                __global const float* zpos, 
-                                __global const float* xvel, 
-                                __global const float* yvel, 
-                                __global const float* zvel, 
-                                __global const float* xposp, 
-                                __global const float* yposp, 
-                                __global const float* zposp, 
-                                __global const float* xvelp,
-                                __global const float* yvelp,
-                                __global const float* zvelp, 
-                                __global const float* xacc0,
-                                __global const float* yacc0,
-                                __global const float* zacc0,
-                                __global const float* xjerk0,
-                                __global const float* yjerk0,
-                                __global const float* zjerk0,
-                                __global const float* mass,
+__kernel void hermiteIntegrator(__global const double* xpos, 
+                                __global const double* ypos, 
+                                __global const double* zpos, 
+                                __global const double* xvel, 
+                                __global const double* yvel, 
+                                __global const double* zvel, 
+                                __global const double* xposp, 
+                                __global const double* yposp, 
+                                __global const double* zposp, 
+                                __global const double* xvelp,
+                                __global const double* yvelp,
+                                __global const double* zvelp, 
+                                __global const double* xacc0,
+                                __global const double* yacc0,
+                                __global const double* zacc0,
+                                __global const double* xjerk0,
+                                __global const double* yjerk0,
+                                __global const double* zjerk0,
+                                __global const double* mass,
                                 __global const int* particle_count,
-                                __global float* xposres, 
-                                __global float* yposres, 
-                                __global float* zposres, 
-                                __global float* xvelres, 
-                                __global float* yvelres, 
-                                __global float* zvelres ) {
+                                __global double* xposres, 
+                                __global double* yposres, 
+                                __global double* zposres, 
+                                __global double* xvelres, 
+                                __global double* yvelres, 
+                                __global double* zvelres ) {
     int p = get_global_id(0);
 
-    float dt = 2.5;
-    /*
-    printf("kernel 2, pos %i : %f : %f\n", p, xpos[p], ypos[p]);
-    printf("kernel 2, xpos %i : %f\n", p, xpos[p]);
-    printf("kernel 2, xposp %i : %f\n", p, xposp[p]);
-    */
-    float forcepX = 0, forcepY = 0, forcepZ = 0;
-    float jerkpX = 0, jerkpY = 0, jerkpZ = 0;
-    float dist = 0, pmass = mass[p];
+    double dt = 0.5;
 
-    float x_comp = 0, y_comp = 0, z_comp = 0;
+    double forcepX = 0, forcepY = 0, forcepZ = 0;
+    double jerkpX = 0, jerkpY = 0, jerkpZ = 0;
+    double dist = 0, pmass = mass[p];
+
+    double x_comp = 0, y_comp = 0, z_comp = 0;
     /* ---- Calculate predicted acceleration and jerk ---- */
     
     for (int i = 0; i < *particle_count; i++) {
         if(i == p) continue;
         calcDistanceAndComponent(xposp[p], yposp[p], zposp[p], xposp[i], yposp[i], zposp[i], &dist, &x_comp, &y_comp, &z_comp);
-        float sdist = dist + 10000;
+        double sdist = dist + 10000;
         calcForceVector (sdist, pmass, mass[i], x_comp, y_comp, z_comp, &forcepX, &forcepY, &forcepZ);
         
 
-        float relvel [3] = {xvelp[i] - xvelp[p], yvelp[i] - yvelp[p], zvelp[i] - zvelp[p]};
-        float vdotr = relvel[0] * (x_comp * sdist) + relvel[1] * (y_comp * sdist) + relvel[2] * (z_comp * sdist);
+        double relvel [3] = {xvelp[i] - xvelp[p], yvelp[i] - yvelp[p], zvelp[i] - zvelp[p]};
+        double vdotr = relvel[0] * (x_comp * sdist) + relvel[1] * (y_comp * sdist) + relvel[2] * (z_comp * sdist);
 
-        float G = 6.67 * 0.00000000001;
+        double G = 6.67 * 0.00000000001;
         jerkpX += G * mass[i] * (relvel[0] / (sdist * sdist * sdist) - 3 * (vdotr) * (x_comp * sdist) / (sdist*sdist*sdist*sdist*sdist));
         jerkpY += G * mass[i] * (relvel[1] / (sdist * sdist * sdist) - 3 * (vdotr) * (y_comp * sdist) / (sdist*sdist*sdist*sdist*sdist));
         jerkpZ += G * mass[i] * (relvel[2] / (sdist * sdist * sdist) - 3 * (vdotr) * (z_comp * sdist) / (sdist*sdist*sdist*sdist*sdist));
     }
-    float accpX = forcepX / pmass, accpY = forcepY / pmass, accpZ = forcepZ / pmass;
+    double accpX = forcepX / pmass, accpY = forcepY / pmass, accpZ = forcepZ / pmass;
 
-    float xvel_f = xvel[p] + 0.5 * (xacc0[p] + accpX) * dt + 1.0 / 12.0 * (xjerk0[p] - jerkpX) * dt * dt;
-    float yvel_f = yvel[p] + 0.5 * (yacc0[p] + accpY) * dt + 1.0 / 12.0 * (yjerk0[p] - jerkpY) * dt * dt;
-    float zvel_f = zvel[p] + 0.5 * (zacc0[p] + accpZ) * dt + 1.0 / 12.0 * (zjerk0[p] - jerkpZ) * dt * dt;
+    double xvel_f = xvel[p] + 0.5 * (xacc0[p] + accpX) * dt + 1.0 / 12.0 * (xjerk0[p] - jerkpX) * dt * dt;
+    double yvel_f = yvel[p] + 0.5 * (yacc0[p] + accpY) * dt + 1.0 / 12.0 * (yjerk0[p] - jerkpY) * dt * dt;
+    double zvel_f = zvel[p] + 0.5 * (zacc0[p] + accpZ) * dt + 1.0 / 12.0 * (zjerk0[p] - jerkpZ) * dt * dt;
     
-    float xpos_f = xpos[p] + 0.5 * (xvel[p] + xvel_f) * dt + 1.0 / 12.0 * (xacc0[p] - accpX) * dt * dt;
-    float ypos_f = ypos[p] + 0.5 * (yvel[p] + yvel_f) * dt + 1.0 / 12.0 * (yacc0[p] - accpY) * dt * dt;
-    float zpos_f = zpos[p] + 0.6 * (zvel[p] + zvel_f) * dt + 1.0 / 12.0 * (zacc0[p] - accpZ) * dt * dt;
-/*
-    printf("kernel 2, xposres[p] %i : %f\n", p, xposres[p]);*/
-    xposres[p] = xpos_f;/*
-    printf("kernel 2, xposres[p] %i : %f\n", p, xposres[p]);*/
+    double xpos_f = xpos[p] + 0.5 * (xvel[p] + xvel_f) * dt + 1.0 / 12.0 * (xacc0[p] - accpX) * dt * dt;
+    double ypos_f = ypos[p] + 0.5 * (yvel[p] + yvel_f) * dt + 1.0 / 12.0 * (yacc0[p] - accpY) * dt * dt;
+    double zpos_f = zpos[p] + 0.5 * (zvel[p] + zvel_f) * dt + 1.0 / 12.0 * (zacc0[p] - accpZ) * dt * dt;
+
+    xposres[p] = xpos_f;
     yposres[p] = ypos_f;
     zposres[p] = zpos_f;
     
