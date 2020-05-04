@@ -12,6 +12,8 @@
 #include <cmath>
 #include <string>
 #include<random>
+#include <cstring>
+#include <zconf.h>
 //#include <OpenCL/OpenCL.h>
 
 using namespace std;
@@ -19,6 +21,7 @@ using namespace std;
 const char *getErrorString(cl_int error);
 void printErrorCode (cl_int* code);
 void printArray(double* arr, int len);
+std::string get_self_path ();
 
 GPUSimulator::GPUSimulator (int time_steps, int particle_count) {
     this->time_steps = time_steps;
@@ -177,7 +180,12 @@ GPUSimulator::GPUSimulator (int time_steps, int particle_count) {
     cl_program program;
     
     ifstream kernelfile;
-    kernelfile.open("C:/Users/Ejer/Desktop/Programs/NBodySim/NBodySim/NBodySim/kernel.cl");
+    string path = get_self_path();
+    std::string::size_type t = path.find_last_of("/");
+    path = path.substr(0,t);
+    path = path + "/kernel.cl";
+
+    kernelfile.open(path);
     
     if (!kernelfile) {
         cerr << "Unable to open kernel file";
@@ -291,7 +299,23 @@ GPUSimulator::GPUSimulator (int time_steps, int particle_count) {
     clStatus = clSetKernelArg(kernel, ++a, sizeof(cl_mem), (void *)&xvelres);
     clStatus = clSetKernelArg(kernel, ++a, sizeof(cl_mem), (void *)&yvelres);
     clStatus = clSetKernelArg(kernel, ++a, sizeof(cl_mem), (void *)&zvelres);
-    
+}
+
+std::string get_self_path () {
+    char buf[1024];
+
+    /* The manpage says it won't null terminate.  Let's zero the buffer. */
+    memset(buf, 0, sizeof(buf));
+
+    /* Note we use sizeof(buf)-1 since we may need an extra char for NUL. */
+    if (readlink("/proc/self/exe", buf, sizeof(buf)-1) < 0)
+    {
+        /* There was an error...  Perhaps the path does not exist
+         * or the buffer is not big enough.  errno has the details. */
+        perror("readlink");
+        exit(-2);
+    }
+    return buf;
 }
 
 void GPUSimulator::setState (double* xp,
@@ -364,7 +388,7 @@ void GPUSimulator::setInitialState() {
         xv[i] = veldist(rvel);
 		yv[i] = veldist(rvel);
 		zv[i] = veldist(rvel);
-        m[i] = (double)pow(10, 24.5);
+        m[i] = (double)pow(10, 23);
     }
     
     m[0] *= 30;
